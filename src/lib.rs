@@ -768,7 +768,7 @@ pub struct DefragmentationStats {
 impl Allocator {
     /// Constructor a new `Allocator` using the provided options.
     pub fn new(create_info: &AllocatorCreateInfo) -> Result<Self> {
-        use ash::version::{DeviceV1_0, DeviceV1_1, InstanceV1_0};
+        use ash::version::{DeviceV1_0, DeviceV1_1};
         let instance = create_info.instance.clone();
         let device = create_info.device.clone();
         let routed_functions = unsafe {
@@ -1321,38 +1321,6 @@ impl Allocator {
                 allocations_ffi.len(),
                 allocations_ffi.as_mut_ptr(),
             );
-        }
-    }
-
-    /// Tries to resize an allocation in place, if there is enough free memory after it.
-    ///
-    /// Tries to change allocation's size without moving or reallocating it.
-    /// You can both shrink and grow allocation size.
-    /// When growing, it succeeds only when the allocation belongs to a memory block with enough
-    /// free space after it.
-    ///
-    /// Returns `ash::vk::Result::SUCCESS` if allocation's size has been successfully changed.
-    /// Returns `ash::vk::Result::ERROR_OUT_OF_POOL_MEMORY` if allocation's size could not be changed.
-    ///
-    /// After successful call to this function, `AllocationInfo::get_size` of this allocation changes.
-    /// All other parameters stay the same: memory pool and type, alignment, offset, mapped pointer.
-    ///
-    /// - Calling this function on allocation that is in lost state fails with result `ash::vk::Result::ERROR_VALIDATION_FAILED_EXT`.
-    /// - Calling this function with `new_size` same as current allocation size does nothing and returns `ash::vk::Result::SUCCESS`.
-    /// - Resizing dedicated allocations, as well as allocations created in pools that use linear
-    ///   or buddy algorithm, is not supported. The function returns `ash::vk::Result::ERROR_FEATURE_NOT_PRESENT` in such cases.
-    ///   Support may be added in the future.
-    pub fn resize_allocation(&self, allocation: &Allocation, new_size: usize) -> Result<()> {
-        let result = ffi_to_result(unsafe {
-            ffi::vmaResizeAllocation(
-                self.internal,
-                allocation.internal,
-                new_size as ffi::VkDeviceSize,
-            )
-        });
-        match result {
-            ash::vk::Result::SUCCESS => Ok(()),
-            _ => Err(Error::vulkan(result)),
         }
     }
 
